@@ -1,35 +1,33 @@
-import * as express from "express";
-import * as compression from "compression";
-import * as bodyParser from "body-parser";
 import { Server } from "socket.io";
-import { SocketControllers } from "socket-controllers";
-import { socketControllerOptions } from "./configs/SocketConfig";
 import { createServer } from "http";
+import { socketControllerOptions } from "./configs/SocketConfig";
+import { SocketControllers } from "socket-controllers";
 
 
 export class DokiSocketServer {
   public PORT: number = Number(process.env.PORT) || 9000;
-  private readonly app: express.Application;
-
-
-  constructor() {
-    this.app = express();
-    this.setConfig();
-  }
 
   /**
    * Start server.
    */
   public async startServer(): Promise<void> {
-    const io = new Server(createServer(this.app));
+    const server = createServer();
+    const io = new Server(server,
+      {
+        cors: {
+          origin: ["http://localhost:3000", "http://218.235.88.198:3000"],
+          credentials: true,
+
+        },
+      });
 
     new SocketControllers({
       ...socketControllerOptions,
       io
-    })
+    });
 
     return new Promise<void>((resolve, reject) => {
-      this.app
+      server
         .listen(this.PORT, () => {
           console.log(`SERVER START ON PORT : ${this.PORT}`);
           return resolve();
@@ -39,20 +37,7 @@ export class DokiSocketServer {
           return reject(e);
         });
     });
+
   }
 
-  /**
-   * set express app config
-   */
-  private async setConfig() {
-    this.app.use(compression());
-    this.app.use(bodyParser.json({ limit: "50mb" }));
-    this.app.use(
-      bodyParser.urlencoded({
-        limit: "50mb",
-        extended: true,
-        parameterLimit: 100000,
-      })
-    );
-  }
 }

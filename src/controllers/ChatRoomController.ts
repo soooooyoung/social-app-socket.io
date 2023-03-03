@@ -6,24 +6,25 @@ import {
     MessageBody,
     OnMessage,
 } from 'socket-controllers';
+import { Socket } from 'socket.io';
 import { Service } from 'typedi';
 import { BaseController } from './BaseController';
 
-@SocketController()
+@SocketController("/room/:roomId")
 @Service()
 export class ChatRoomController extends BaseController {
     @OnConnect()
-    connection(@ConnectedSocket() socket: any) {
-        console.log('client connected');
+    connection(@ConnectedSocket() socket: Socket) {
+        console.log('client connected to chat room');
     }
 
     @OnDisconnect()
-    disconnect(@ConnectedSocket() socket: any) {
-        console.log('client disconnected');
+    disconnect(@ConnectedSocket() socket: Socket) {
+        console.log('client disconnected from chat room');
     }
 
     @OnMessage('save')
-    save(@ConnectedSocket() socket: any, @MessageBody() message: any) {
+    save(@ConnectedSocket() socket: Socket, @MessageBody() message: any) {
         console.log('received message:', message);
         console.log('setting id to the message and sending it back to the client');
         message.id = 1;

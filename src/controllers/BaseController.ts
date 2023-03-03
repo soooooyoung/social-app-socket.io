@@ -6,23 +6,24 @@ import {
     MessageBody,
     OnMessage,
 } from 'socket-controllers';
+import { Socket } from 'socket.io';
 import { Service } from 'typedi';
 
-@SocketController("")
+@SocketController("/")
 @Service()
 export class BaseController {
     @OnConnect()
-    connection(@ConnectedSocket() socket: any) {
+    connection(@ConnectedSocket() socket: Socket) {
         console.log('client connected');
     }
 
     @OnDisconnect()
-    disconnect(@ConnectedSocket() socket: any) {
+    disconnect(@ConnectedSocket() socket: Socket) {
         console.log('client disconnected');
     }
 
     @OnMessage('save')
-    save(@ConnectedSocket() socket: any, @MessageBody() message: any) {
+    save(@ConnectedSocket() socket: Socket, @MessageBody() message: any) {
         console.log('received message:', message);
         console.log('setting id to the message and sending it back to the client');
         message.id = 1;
