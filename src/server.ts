@@ -3,7 +3,6 @@ import { createServer } from "http";
 import { socketControllerOptions } from "./configs/SocketConfig";
 import { SocketControllers } from "socket-controllers";
 
-
 export class DokiSocketServer {
   public PORT: number = Number(process.env.PORT) || 9000;
 
@@ -12,18 +11,16 @@ export class DokiSocketServer {
    */
   public async startServer(): Promise<void> {
     const server = createServer();
-    const io = new Server(server,
-      {
-        cors: {
-          origin: ["http://localhost:3000", "http://218.235.88.198:3000"],
-          credentials: true,
-
-        },
-      });
+    const io = new Server(server, {
+      cors: {
+        origin: ["http://localhost:3000", "http://218.235.88.198:3000"],
+        credentials: true,
+      },
+    });
 
     new SocketControllers({
       ...socketControllerOptions,
-      io
+      io,
     });
 
     return new Promise<void>((resolve, reject) => {
@@ -37,7 +34,5 @@ export class DokiSocketServer {
           return reject(e);
         });
     });
-
   }
-
 }
