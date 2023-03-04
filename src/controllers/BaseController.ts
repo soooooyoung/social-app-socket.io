@@ -1,5 +1,5 @@
 import * as cookie from "cookie";
-import { AuthTokenJWT } from "../models/JWTPayload";
+import { AuthTokenJWT } from "../models";
 import {
   OnConnect,
   SocketController,
@@ -18,8 +18,7 @@ import { logError, logInfo } from "../utils/Logger";
 @Service()
 export class BaseController {
   private jwt = new TokenUtils();
-  private users: { username: string; socketId: string }[] = [];
-
+  protected users = new Map<string, string>();
   protected checkAuth = async (authToken: string) => {
     return await this.jwt.verifyToken<AuthTokenJWT>(authToken);
   };
@@ -50,16 +49,12 @@ export class BaseController {
         parsedToken.user.username === username
       ) {
         // Check duplicate connection
-        if (this.users.find((user) => user.username === username)) {
+        if ([...this.users.entries()].find(([k, v]) => v === username)) {
           throw new Error("User already Joined");
         }
 
-        const newUser = {
-          socketId: socket.id,
-          username,
-        };
+        this.users.set(socket.id, username);
 
-        this.users = [...this.users, newUser];
         logInfo("client connected to chat room: ", socket.id);
       } else {
         throw new InvalidKeyException("Invalid Token");
@@ -73,7 +68,7 @@ export class BaseController {
 
   @OnDisconnect()
   disconnect(@ConnectedSocket() socket: Socket) {
-    this.users = this.users.filter((user) => user.socketId !== socket.id);
+    this.users.delete(socket.id);
     logInfo("client disconnected from chat room: ", socket.id);
   }
 }

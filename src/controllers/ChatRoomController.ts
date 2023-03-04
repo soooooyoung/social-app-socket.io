@@ -7,8 +7,9 @@ import {
   OnMessage,
   SocketQueryParam,
   OnConnect,
+  SocketIO,
 } from "socket-controllers";
-import { Socket } from "socket.io";
+import { Server, Socket } from "socket.io";
 import { Service } from "typedi";
 import { BaseController } from "./BaseController";
 import { logError, logInfo } from "../utils/Logger";
@@ -16,6 +17,26 @@ import { logError, logInfo } from "../utils/Logger";
 @SocketController("/room")
 @Service()
 export class ChatRoomController extends BaseController {
+  private readonly namespace = "/room";
+
+  private onUpdateRoom = async (io: Server, roomId: number) => {
+    // Announce Participants
+    let users: string[] = [];
+
+    const sockets = await io
+      .of(this.namespace)
+      .in([`room${roomId}`])
+      .fetchSockets();
+
+    for (const socket of sockets) {
+      const user = this.users.get(socket.id);
+      if (user) users.push(user);
+    }
+    io.of(this.namespace)
+      .in([`room${roomId}`])
+      .emit("participants", users);
+  };
+
   @OnConnect()
   async connection(
     @ConnectedSocket() socket: Socket,
@@ -26,9 +47,10 @@ export class ChatRoomController extends BaseController {
     socket.emit("join");
   }
 
-  //https://socket.io/docs/v3/emit-cheatsheet/
+  //https://socket.io/docs/v4/emit-cheatsheet/
   @OnMessage("save")
   async save(
+    @SocketIO() io: Server,
     @ConnectedSocket()
     socket: Socket,
     @SocketQueryParam("roomId") roomId: number,
@@ -44,9 +66,7 @@ export class ChatRoomController extends BaseController {
           type: "message",
         };
 
-        // NOTE: cannot use io.in with current library- io instance unreachable.
-        socket.emit("message_success", newChatLog);
-        socket.to(`room${roomId}`).emit("message_success", newChatLog);
+        io.of("/room").to(`room${roomId}`).emit("message_success", newChatLog);
       } else {
         throw new IllegalStateException("Invalid Room");
       }
@@ -58,6 +78,7 @@ export class ChatRoomController extends BaseController {
 
   @OnMessage("leave")
   async leave(
+    @SocketIO() io: Server,
     @ConnectedSocket() socket: Socket,
     @SocketQueryParam("roomId") roomId: number,
     @SocketQueryParam("username") username: string
@@ -73,11 +94,13 @@ export class ChatRoomController extends BaseController {
       type: "announcement",
     };
 
+    this.onUpdateRoom(io, roomId);
     socket.to(`room${roomId}`).emit("leave_success", newChatLog);
   }
 
   @OnMessage("join")
   async join(
+    @SocketIO() io: Server,
     @ConnectedSocket() socket: Socket,
     @SocketQueryParam("roomId") roomId: number,
     @SocketQueryParam("username") username: string
@@ -94,9 +117,12 @@ export class ChatRoomController extends BaseController {
         type: "announcement",
       };
 
-      // NOTE: cannot use io.in with current library- io instance unreachable.
-      socket.emit("join_success", newChatLog);
-      socket.to(`room${roomId}`).emit("join_success", newChatLog);
+      // Announce Join
+      io.of(this.namespace)
+        .in([`room${roomId}`])
+        .emit("join_success", newChatLog);
+
+      await this.onUpdateRoom(io, roomId);
       logInfo(`${username} has joined room${roomId}`);
     } catch (e) {
       logError(e);
