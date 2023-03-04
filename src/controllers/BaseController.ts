@@ -12,7 +12,6 @@ import {
 import { Socket } from "socket.io";
 import { Service } from "typedi";
 import { TokenUtils } from "../utils/security/JWTTokenUtils";
-import { User } from "../models";
 import { InvalidKeyException } from "../exceptions";
 
 @SocketController("/")
@@ -28,6 +27,7 @@ export class BaseController {
   @OnConnect()
   async connection(
     @ConnectedSocket() socket: Socket,
+    @SocketQueryParam("roomId") roomId: number,
     @SocketQueryParam("username") username: string
   ) {
     try {

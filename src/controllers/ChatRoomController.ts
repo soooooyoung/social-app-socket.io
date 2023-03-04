@@ -6,6 +6,7 @@ import {
   MessageBody,
   OnMessage,
   SocketQueryParam,
+  OnConnect,
 } from "socket-controllers";
 import { Socket } from "socket.io";
 import { Service } from "typedi";
@@ -14,6 +15,16 @@ import { BaseController } from "./BaseController";
 @SocketController("/room")
 @Service()
 export class ChatRoomController extends BaseController {
+  @OnConnect()
+  async connection(
+    @ConnectedSocket() socket: Socket,
+    @SocketQueryParam("roomId") roomId: number,
+    @SocketQueryParam("username") username: string
+  ) {
+    await super.connection(socket, roomId, username);
+    socket.emit("join");
+  }
+
   //https://socket.io/docs/v3/emit-cheatsheet/
   @OnMessage("save")
   async save(
