@@ -1,5 +1,8 @@
 # social-app-socket.io
-Express.js application utilizing Socket.IO
+Node.js application utilizing Socket.IO.
+
+-[Click Here for SocketIO Client Implementation](https://github.com/soooooyoung/react-social-app)
+-[Click Here for Real Site Testing](https://snsus.click/)
 
 ## Functionalities (기능) 
 
