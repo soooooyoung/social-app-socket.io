@@ -28,7 +28,7 @@ export class DokiSocketServer {
     return new Promise<void>((resolve, reject) => {
       server
         .listen(this.PORT, () => {
-          console.log(`SERVER START ON PORT : ${this.PORT}`);
+          logInfo(`SERVER START ON PORT : ${this.PORT}`);
           return resolve();
         })
         .on("error", (e) => {

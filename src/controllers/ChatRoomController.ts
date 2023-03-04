@@ -11,7 +11,7 @@ import {
 import { Socket } from "socket.io";
 import { Service } from "typedi";
 import { BaseController } from "./BaseController";
-import { logInfo } from "../utils/Logger";
+import { logError, logInfo } from "../utils/Logger";
 
 @SocketController("/room")
 @Service()
@@ -51,7 +51,7 @@ export class ChatRoomController extends BaseController {
         throw new IllegalStateException("Invalid Room");
       }
     } catch (e) {
-      console.log(e);
+      logError(e);
       socket.emit("message_fail");
     }
   }
@@ -99,7 +99,7 @@ export class ChatRoomController extends BaseController {
       socket.to(`room${roomId}`).emit("join_success", newChatLog);
       logInfo(`${username} has joined room${roomId}`);
     } catch (e) {
-      console.log(e);
+      logError(e);
       socket.emit("join_fail");
       socket.disconnect();
     }
