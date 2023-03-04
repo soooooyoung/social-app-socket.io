@@ -5,14 +5,14 @@ import {
   SocketController,
   ConnectedSocket,
   OnDisconnect,
-  MessageBody,
-  OnMessage,
   SocketQueryParam,
+  EmitOnFail,
 } from "socket-controllers";
 import { Socket } from "socket.io";
 import { Service } from "typedi";
 import { TokenUtils } from "../utils/security/JWTTokenUtils";
 import { InvalidKeyException } from "../exceptions";
+import { logError, logInfo } from "../utils/Logger";
 
 @SocketController("/")
 @Service()
@@ -27,10 +27,13 @@ export class BaseController {
   @OnConnect()
   async connection(
     @ConnectedSocket() socket: Socket,
-    @SocketQueryParam("roomId") roomId: number,
+    @EmitOnFail("connect_fail")
+    @SocketQueryParam("roomId")
+    roomId: number,
     @SocketQueryParam("username") username: string
   ) {
     try {
+      logInfo("client connection requested: ", socket.id);
       // Check cookies from header
       const cookies = socket.handshake.headers.cookie;
       if (!cookies) {
@@ -57,11 +60,12 @@ export class BaseController {
         };
 
         this.users = [...this.users, newUser];
-        console.log("client connected to chat room: ", socket.id);
+        logInfo("client connected to chat room: ", socket.id);
       } else {
         throw new InvalidKeyException("Invalid Token");
       }
     } catch (e) {
+      logError(e);
       socket.emit("connect_fail", e);
       socket.disconnect();
     }
@@ -70,6 +74,6 @@ export class BaseController {
   @OnDisconnect()
   disconnect(@ConnectedSocket() socket: Socket) {
     this.users = this.users.filter((user) => user.socketId !== socket.id);
-    console.log("client disconnected from chat room: ", socket.id);
+    logInfo("client disconnected from chat room: ", socket.id);
   }
 }

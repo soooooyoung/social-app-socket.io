@@ -1,4 +1,5 @@
 import * as jwt from "jsonwebtoken";
+import { logError } from "../../utils/Logger";
 import { env } from "../../configs/env";
 import {
   IllegalStateException,
@@ -21,6 +22,7 @@ export class TokenUtils {
       if (expiresIn) return jwt.sign(payload, secret, { expiresIn });
       return jwt.sign(payload, secret);
     } catch (e) {
+      logError(e);
       throw new IllegalStateException("Unable to generate Token: " + e);
     }
   };
@@ -39,7 +41,7 @@ export class TokenUtils {
     try {
       return (await jwt.verify(token, this.accessTokenSecret)) as T;
     } catch (e) {
-      console.log(e);
+      logError(e);
       throw new InvalidKeyException("Invalid Token");
     }
   };

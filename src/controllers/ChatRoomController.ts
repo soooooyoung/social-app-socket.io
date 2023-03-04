@@ -11,6 +11,7 @@ import {
 import { Socket } from "socket.io";
 import { Service } from "typedi";
 import { BaseController } from "./BaseController";
+import { logInfo } from "../utils/Logger";
 
 @SocketController("/room")
 @Service()
@@ -39,7 +40,7 @@ export class ChatRoomController extends BaseController {
         const newChatLog: ChatLog = {
           message,
           username,
-          time: new Date().toLocaleTimeString(),
+          time: new Date(),
           type: "message",
         };
 
@@ -63,12 +64,12 @@ export class ChatRoomController extends BaseController {
   ) {
     // leave Room
     socket.leave(`room${roomId}`);
-    console.log(`${username} has left room${roomId}`);
+    logInfo(`${username} has left room${roomId}`);
     // Add Chat Log
     const newChatLog: ChatLog = {
       message: `${username} has left room${roomId}`,
       username,
-      time: new Date().toLocaleTimeString(),
+      time: new Date(),
       type: "announcement",
     };
 
@@ -89,14 +90,14 @@ export class ChatRoomController extends BaseController {
       const newChatLog: ChatLog = {
         message: `${username} has joined room${roomId}`,
         username,
-        time: new Date().toLocaleTimeString(),
+        time: new Date(),
         type: "announcement",
       };
 
       // NOTE: cannot use io.in with current library- io instance unreachable.
       socket.emit("join_success", newChatLog);
       socket.to(`room${roomId}`).emit("join_success", newChatLog);
-      console.log(`${username} has joined room${roomId}`);
+      logInfo(`${username} has joined room${roomId}`);
     } catch (e) {
       console.log(e);
       socket.emit("join_fail");

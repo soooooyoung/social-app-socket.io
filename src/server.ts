@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import { createServer } from "http";
 import { socketControllerOptions } from "./configs/SocketConfig";
 import { SocketControllers } from "socket-controllers";
+import { logError, logInfo } from "./utils/Logger";
 
 export class DokiSocketServer {
   public PORT: number = Number(process.env.PORT) || 9000;
@@ -12,8 +13,9 @@ export class DokiSocketServer {
   public async startServer(): Promise<void> {
     const server = createServer();
     const io = new Server(server, {
+      path: "/ws/",
       cors: {
-        origin: ["http://localhost:3000", "https://snsus.click"],
+        origin: ["https://snsus.click", "http://localhost:3000"],
         credentials: true,
       },
     });
@@ -30,7 +32,7 @@ export class DokiSocketServer {
           return resolve();
         })
         .on("error", (e) => {
-          console.log("SERVER START ERROR : ", e);
+          logError(e);
           return reject(e);
         });
     });
