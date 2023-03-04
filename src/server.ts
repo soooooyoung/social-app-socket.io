@@ -13,7 +13,7 @@ export class DokiSocketServer {
     const server = createServer();
     const io = new Server(server, {
       cors: {
-        origin: ["http://localhost:3000", "http://218.235.88.198:3000"],
+        origin: ["http://localhost:3000", "https://snsus.click"],
         credentials: true,
       },
     });
