@@ -1,10 +1,8 @@
 import { IllegalStateException } from "../exceptions";
-import { ChatLog } from "../models";
+import { ChatLog, User } from "../models";
 import {
-  OnConnect,
   SocketController,
   ConnectedSocket,
-  OnDisconnect,
   MessageBody,
   OnMessage,
   SocketQueryParam,
@@ -16,16 +14,6 @@ import { BaseController } from "./BaseController";
 @SocketController("/room")
 @Service()
 export class ChatRoomController extends BaseController {
-  @OnConnect()
-  connection(@ConnectedSocket() socket: Socket) {
-    console.log("client connected to chat room: ", socket.id);
-  }
-
-  @OnDisconnect()
-  disconnect(@ConnectedSocket() socket: Socket) {
-    console.log("client disconnected from chat room: ", socket.id);
-  }
-
   //https://socket.io/docs/v3/emit-cheatsheet/
   @OnMessage("save")
   async save(
@@ -41,6 +29,7 @@ export class ChatRoomController extends BaseController {
           message,
           username,
           time: new Date().toLocaleTimeString(),
+          type: "message",
         };
 
         // NOTE: cannot use io.in with current library- io instance unreachable.
@@ -50,23 +39,37 @@ export class ChatRoomController extends BaseController {
         throw new IllegalStateException("Invalid Room");
       }
     } catch (e) {
-      console.log("error");
+      console.log(e);
       socket.emit("message_fail");
     }
   }
 
   @OnMessage("join")
-  join(
+  async join(
     @ConnectedSocket() socket: Socket,
     @SocketQueryParam("roomId") roomId: number,
     @SocketQueryParam("username") username: string
   ) {
     try {
-      console.log(`${username} joined room${roomId} `);
+      // Join Room
       socket.join(`room${roomId}`);
-      socket.emit("join_success", roomId);
+
+      // Add Chat Log
+      const newChatLog: ChatLog = {
+        message: `${username} has joined room${roomId}`,
+        username,
+        time: new Date().toLocaleTimeString(),
+        type: "announcement",
+      };
+
+      // NOTE: cannot use io.in with current library- io instance unreachable.
+      socket.emit("join_success", newChatLog);
+      socket.to(`room${roomId}`).emit("join_success", newChatLog);
+      console.log(`${username} has joined room${roomId}`);
     } catch (e) {
+      console.log(e);
       socket.emit("join_fail");
+      socket.disconnect();
     }
   }
 }

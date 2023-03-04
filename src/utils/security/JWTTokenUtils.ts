@@ -2,6 +2,7 @@ import * as jwt from "jsonwebtoken";
 import { env } from "../../configs/env";
 import {
   IllegalStateException,
+  InvalidKeyException,
   NoResultException,
 } from "../../exceptions";
 
@@ -24,7 +25,6 @@ export class TokenUtils {
     }
   };
 
-
   public generateToken = (
     payload: string | object,
     expiresIn?: string | number
@@ -35,4 +35,12 @@ export class TokenUtils {
     return this.doGenerateToken(payload, this.accessTokenSecret, expiresIn);
   };
 
+  public verifyToken = async <T>(token: string) => {
+    try {
+      return (await jwt.verify(token, this.accessTokenSecret)) as T;
+    } catch (e) {
+      console.log(e);
+      throw new InvalidKeyException("Invalid Token");
+    }
+  };
 }
