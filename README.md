@@ -16,5 +16,5 @@ Express.js application utilizing Socket.IO
 
 ### Common
 
-✅ Verify Credentials (HTTP Cookie)
+✅ Verify Credentials (HTTP Cookie)  
 ✅ Prevent Duplicate User Connection
