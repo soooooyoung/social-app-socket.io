@@ -55,6 +55,26 @@ export class ChatRoomController extends BaseController {
     }
   }
 
+  @OnMessage("leave")
+  async leave(
+    @ConnectedSocket() socket: Socket,
+    @SocketQueryParam("roomId") roomId: number,
+    @SocketQueryParam("username") username: string
+  ) {
+    // leave Room
+    socket.leave(`room${roomId}`);
+    console.log(`${username} has left room${roomId}`);
+    // Add Chat Log
+    const newChatLog: ChatLog = {
+      message: `${username} has left room${roomId}`,
+      username,
+      time: new Date().toLocaleTimeString(),
+      type: "announcement",
+    };
+
+    socket.to(`room${roomId}`).emit("leave_success", newChatLog);
+  }
+
   @OnMessage("join")
   async join(
     @ConnectedSocket() socket: Socket,
