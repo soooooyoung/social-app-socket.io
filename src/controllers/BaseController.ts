@@ -7,8 +7,9 @@ import {
   OnDisconnect,
   SocketQueryParam,
   EmitOnFail,
+  SocketIO,
 } from "socket-controllers";
-import { Socket } from "socket.io";
+import { Server, Socket } from "socket.io";
 import { Service } from "typedi";
 import { TokenUtils } from "../utils/security/JWTTokenUtils";
 import { InvalidKeyException } from "../exceptions";
@@ -18,18 +19,40 @@ import { logError, logInfo } from "../utils/Logger";
 @Service()
 export class BaseController {
   private jwt = new TokenUtils();
+  protected readonly namespace: string = "";
   protected users = new Map<string, string>();
   protected checkAuth = async (authToken: string) => {
     return await this.jwt.verifyToken<AuthTokenJWT>(authToken);
   };
+  protected onUpdateRoom = async (io: Server, roomname: string) => {
+    // Announce Participants
+    let users: string[] = [];
+
+    const sockets = await io.of(this.namespace).in([roomname]).fetchSockets();
+
+    for (const socket of sockets) {
+      const user = this.users.get(socket.id);
+
+      if (user) {
+        // check duplicate
+        if (users.find((v) => v === user)) {
+          socket.disconnect();
+          throw new Error("User Already Joined Room");
+        } else {
+          users.push(user);
+        }
+      }
+    }
+    io.of(this.namespace).in([roomname]).emit("participants", users);
+  };
 
   @OnConnect()
   async connection(
+    @SocketIO() io: Server,
     @ConnectedSocket() socket: Socket,
     @EmitOnFail("connect_fail")
-    @SocketQueryParam("roomId")
-    roomId: number,
-    @SocketQueryParam("username") username: string
+    @SocketQueryParam("username")
+    username: string
   ) {
     try {
       logInfo("client connection requested: ", socket.id);
@@ -48,13 +71,7 @@ export class BaseController {
         parsedToken.user &&
         parsedToken.user.username === username
       ) {
-        // Check duplicate connection
-        if ([...this.users.entries()].find(([k, v]) => v === username)) {
-          throw new Error("User already Joined");
-        }
-
         this.users.set(socket.id, username);
-
         logInfo("client connected to chat room: ", socket.id);
       } else {
         throw new InvalidKeyException("Invalid Token");

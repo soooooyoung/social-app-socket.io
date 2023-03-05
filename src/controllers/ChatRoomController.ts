@@ -17,37 +17,8 @@ import { logError, logInfo } from "../utils/Logger";
 @SocketController("/room")
 @Service()
 export class ChatRoomController extends BaseController {
-  private readonly namespace = "/room";
+  protected readonly namespace = "/room";
 
-  private onUpdateRoom = async (io: Server, roomId: number) => {
-    // Announce Participants
-    let users: string[] = [];
-
-    const sockets = await io
-      .of(this.namespace)
-      .in([`room${roomId}`])
-      .fetchSockets();
-
-    for (const socket of sockets) {
-      const user = this.users.get(socket.id);
-      if (user) users.push(user);
-    }
-    io.of(this.namespace)
-      .in([`room${roomId}`])
-      .emit("participants", users);
-  };
-
-  @OnConnect()
-  async connection(
-    @ConnectedSocket() socket: Socket,
-    @SocketQueryParam("roomId") roomId: number,
-    @SocketQueryParam("username") username: string
-  ) {
-    await super.connection(socket, roomId, username);
-    socket.emit("join");
-  }
-
-  //https://socket.io/docs/v4/emit-cheatsheet/
   @OnMessage("save")
   async save(
     @SocketIO() io: Server,
@@ -55,7 +26,8 @@ export class ChatRoomController extends BaseController {
     socket: Socket,
     @SocketQueryParam("roomId") roomId: number,
     @SocketQueryParam("username") username: string,
-    @MessageBody() message: string
+    @MessageBody()
+    { message }: { message: string; addressee?: string }
   ) {
     try {
       if (socket.rooms.has(`room${roomId}`)) {
@@ -66,7 +38,9 @@ export class ChatRoomController extends BaseController {
           type: "message",
         };
 
-        io.of("/room").to(`room${roomId}`).emit("message_success", newChatLog);
+        io.of(this.namespace)
+          .in(`room${roomId}`)
+          .emit("message_success", newChatLog);
       } else {
         throw new IllegalStateException("Invalid Room");
       }
@@ -85,7 +59,8 @@ export class ChatRoomController extends BaseController {
   ) {
     // leave Room
     socket.leave(`room${roomId}`);
-    logInfo(`${username} has left room${roomId}`);
+    this.onUpdateRoom(io, `room${roomId}`);
+
     // Add Chat Log
     const newChatLog: ChatLog = {
       message: `${username} has left room${roomId}`,
@@ -93,9 +68,9 @@ export class ChatRoomController extends BaseController {
       time: new Date(),
       type: "announcement",
     };
-
-    this.onUpdateRoom(io, roomId);
     socket.to(`room${roomId}`).emit("leave_success", newChatLog);
+
+    logInfo(`${username} has left room${roomId}`);
   }
 
   @OnMessage("join")
@@ -108,7 +83,7 @@ export class ChatRoomController extends BaseController {
     try {
       // Join Room
       socket.join(`room${roomId}`);
-
+      await this.onUpdateRoom(io, `room${roomId}`);
       // Add Chat Log
       const newChatLog: ChatLog = {
         message: `${username} has joined room${roomId}`,
@@ -122,7 +97,6 @@ export class ChatRoomController extends BaseController {
         .in([`room${roomId}`])
         .emit("join_success", newChatLog);
 
-      await this.onUpdateRoom(io, roomId);
       logInfo(`${username} has joined room${roomId}`);
     } catch (e) {
       logError(e);
