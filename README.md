@@ -55,14 +55,9 @@ List of online users are saved to monitor online users.
 ```
 **checkAuth** is used to verify authToken(JWT) with internally provided secret key.
 
-
-#### OnConnect/OnDisconnect
-
 **OnConnect** verifies user auth token and checks if it's information matches the request. If it is valid, user then is added to "users". If not, socket is disconnected.
 
 **OnDisconnect** deletes user from "users.
-
-#### OnUpdateRoom
 
 **OnUpdateRoom** checks for duplicate users, and disconnects them. This function may also be extended by the inheriting controller.
 
