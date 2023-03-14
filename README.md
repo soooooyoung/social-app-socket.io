@@ -29,7 +29,7 @@ Node.js application utilizing Socket.IO.
 
 ✅ Verify Credentials (HTTP Cookie)  
 ✅ Prevent Duplicate User Connection
-
+✅ Save server logs (서버 로그 저장) 
 ## Implementations 
 
 ### Base Controller
