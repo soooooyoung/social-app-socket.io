@@ -27,8 +27,8 @@ Node.js application utilizing Socket.IO.
 
 ### Common
 
-✅ Verify Credentials (HTTP Cookie)  
-✅ Prevent Duplicate User Connection  
+✅ Verify Credentials (HTTP Cookie) (JWT를 사용한 사용자 인증)
+✅ Prevent Duplicate User Connection (중복 채팅 참가 방지) 
 ✅ Save server logs (서버 로그 저장) 
 ## Implementations 
 
